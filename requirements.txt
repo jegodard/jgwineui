@@ -1,0 +1,13 @@
+pip>=9
+setuptools>=26
+wheel>=0.29
+pandas
+pytest
+coverage
+numpy
+httpx
+memoized-property
+gcsfs
+termcolor
+uvicorn
+streamlit
