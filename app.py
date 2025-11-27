@@ -1,6 +1,127 @@
 import streamlit as st
+from PIL import Image
+import pandas as pd
+import time
 import requests
-import plotly.graph_objects as go
+import json
+
+
+# defining the function which will get the prediction 
+# using the data with the user inputs 
+def get_prediction(chemicals):
+    
+    # define the url of the API exposing the trained model
+    url = "https://jgwineapi-dbfsbyhyg9hrg0c5.francecentral-01.azurewebsites.net/predict"
+
+    # List containing the features
+    X_columns = ['volatile_acidity', 'alcohol']
+    
+    # zip the two lists together to create a list of key-value pairs
+    key_value_pairs = zip(X_columns, chemicals)
+    data = dict(key_value_pairs)
+
+    headers = {
+                'accept': 'application/json',
+                'Content-Type': 'application/json',
+    }
+
+    resp = requests.post(url, headers=headers, json=data)
+    
+    return resp.json()
+
+
+# when 'Predict' is clicked, make the prediction and store it 
+def predict(chemicals):
+    
+    st.markdown("***")
+    if st.button("Predict"): 
+        result = get_prediction(chemicals)
+
+        #st.text(result)
+        
+        # Add a placeholder
+        latest_iteration = st.empty()
+        bar = st.progress(0)
+        time.sleep(1)
+        for i in range(100):
+            # Update the progress bar with each iteration.
+            latest_iteration.text(f'Iteration {i+1}')
+            bar.progress(i + 1)
+            time.sleep(0.01)
+        
+        time.sleep(0.5)
+        if result.get('prediction') == 1:
+            #st.text(result.get('prediction'))
+            st.success(f'This is a Good wine, probability: {result.get("probability")[1]:.2f}')
+        else:
+            #st.text(result.get('prediction'))
+            st.error(f'This is a Bad wine, probability: {result.get("probability")[0]:.2f}')
+
+
+# Get features using input widgets
+def inputversion():
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        # fixed_acidity = st.number_input("Fixed Acidity", min_value=0.0, max_value=15.0, value=7.4)
+        volatile_acidity = st.number_input("Volatile Acidity", min_value=0.0, max_value=2.0, value=0.7)
+        # citric_acid = st.number_input("Citric Acid", min_value=0.0, max_value=1.0, value=0.0)
+        # residual_sugar = st.number_input("Residual Sugar", min_value=0.0, max_value=15.0, value=1.9)
+        # free_sulfur_dioxide = st.number_input("Free Sulfur Dioxide", min_value=0, max_value=100, value=11)
+        # total_sulfur_dioxide = st.number_input("Total Sulfur Dioxide", min_value=0, max_value=300, value=34)
+    
+    with col2:
+        st.write('')
+
+    with col3:
+        # chlorides = st.number_input("Chlorides", min_value=0.0, max_value=0.2, value=0.076)
+        # density = st.number_input("Density", min_value=0.0, max_value=2.0, value=0.9978)
+        # sulphates = st.number_input("Sulphates", min_value=0.0, max_value=2.0, value=0.56)
+        # pH = st.number_input("pH", min_value=0.0, max_value=14.0, value=3.51)
+        alcohol = st.number_input("Alcohol", min_value=0.0, max_value=20.0, value=9.4)
+    
+    # chemicals = [[fixed_acidity, volatile_acidity, citric_acid, residual_sugar,
+    #               chlorides, free_sulfur_dioxide, total_sulfur_dioxide, density,
+    #               pH, sulphates, alcohol]]
+
+    chemicals = [volatile_acidity, alcohol]
+    
+    predict(chemicals)
+
+
+# Get features using slider widgets
+def sliderversion():
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        # fixed_acidity = st.slider('Fixed Acidity', 4.0, 16.0, 6.695, 0.01) 
+        volatile_acidity = st.slider('Volatile Acidity', 0.0, 2.0, 0.319, 0.001) 
+        # citric_acid = st.slider('Citric Acidity', 0.0, 1.0, 0.442, 0.01)
+        # residual_sugar = st.slider('Residual Sugar', 0.0, 16.0, 2.391, 0.01) 
+        # free_sulfur_dioxide = st.slider('free sulfur dioxide', 1.0, 80.0, 23.68, 0.1) 
+        # total_sulfur_dioxide = st.slider('total sulfur dioxide', 1.0, 300.0, 33.77, 0.1) 
+
+    with col2:
+        st.write('')
+
+    with col3:
+        # chlorides = st.slider('chlorides', 0.0, 1.0, 0.061, 0.001) 
+        # density = st.slider('density', 0.9, 1.1, 0.9948, 0.001) 
+        # sulphates = st.slider('sulphates', 0.1, 2.0, 0.802, 0.001) 
+        # pH = st.slider('pH', 2.0, 5.0, 3.29, 0.01) 
+        alcohol = st.slider('Alcohol', 0.0, 16.0, 11.634, 0.01) 
+        
+    
+    # chemicals = [[fixed_acidity, volatile_acidity, citric_acid, residual_sugar,
+    #               chlorides, free_sulfur_dioxide, total_sulfur_dioxide, density,
+    #               pH, sulphates, alcohol]]
+    
+    chemicals = [volatile_acidity, alcohol]
+
+    predict(chemicals)
+
 
 # this is the main function in which we define our webpage  
 def main():
@@ -8,126 +129,28 @@ def main():
     st.markdown("### This app is meant to predict red wine quality " +
             "according to different chemical")
 
-    # slider version 
-    volatile_acidity = st.slider('Volatile Acidity', 0.0, 2.0, 0.319, 0.001) 
-    alcohol = st.slider('Alcohol', 0.0, 16.0, 11.634, 0.01) 
+    # display the image of the app
+    col1, col2 = st.columns(2)
+    with col1:
+        init_image = Image.open("img/wine6.jpeg")
+        st.image(init_image, width=250)
 
-    st.text(volatile_acidity)
-    st.text(alcohol)
+    with col2:
+        st.text("")
+        st.markdown("### **Select Mode:**")
+        select_mode = []
 
-    # Bouton pour prédire la qualité
-    if st.button('Prédire la qualité du vin', type='primary'):
-        # Appel à l'API
-        api_url = "https://jgwineapi-dbfsbyhyg9hrg0c5.francecentral-01.azurewebsites.net/predict"
-        data = {
-            "alcohol": alcohol,
-            "volatile_acidity": volatile_acidity
-        }
-        
-        try:
-            response = requests.post(api_url, json=data)
-            response.raise_for_status()
-            
-            # Récupération de la probabilité
-            result = response.json()
-            
-            # Extraire la prédiction et la probabilité
-            prediction = result.get('prediction', 0)
-            probability_list = result.get('probability', [0, 0])
-            
-            # La première valeur de probability indique la probabilité de la prédiction
-            probability = probability_list[1] if isinstance(probability_list, list) and len(probability_list) > 0 else 0
-            
-            # Affichage du KPI
-            st.markdown("---")
-            st.markdown("### 📊 Résultat de la prédiction")
-            
-            # Affichage de la probabilité comme un KPI
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                st.metric(
-                    label="Probabilité que le vin soit bon" if prediction == 1 else "Probabilité que le vin ne soit pas bon",
-                    value=f"{probability * 100:.2f}%",
-                    delta=None
-                )
-                
-                # Indicateur visuel supplémentaire
-                if prediction == 1:
-                    if probability >= 0.7:
-                        st.success("🍷 Excellente qualité probable!")
-                    elif probability >= 0.5:
-                        st.info("👍 Bonne qualité probable")
-                    else:
-                        st.warning("⚠️ Qualité probable mais avec incertitude")
-                else:
-                    st.error("❌ Qualité insuffisante probable")
-            
-            # Graphique Plotly - Jauge de probabilité
-            st.markdown("### 📈 Visualisation")
-            
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number+delta",
-                value = probability * 100,
-                domain = {'x': [0, 1], 'y': [0, 1]},
-                title = {'text': "Confiance de la prédiction", 'font': {'size': 24}},
-                number = {'suffix': "%", 'font': {'size': 40}},
-                gauge = {
-                    'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkgray"},
-                    'bar': {'color': "darkblue"},
-                    'bgcolor': "white",
-                    'borderwidth': 2,
-                    'bordercolor': "gray",
-                    'steps': [
-                        {'range': [0, 50], 'color': '#ffcccc'},
-                        {'range': [50, 70], 'color': '#fff3cd'},
-                        {'range': [70, 100], 'color': '#d4edda'}
-                    ],
-                    'threshold': {
-                        'line': {'color': "red", 'width': 4},
-                        'thickness': 0.75,
-                        'value': 50
-                    }
-                }
-            ))
-            
-            fig.update_layout(
-                height=350,
-                margin=dict(l=20, r=20, t=50, b=20),
-                paper_bgcolor="white",
-                font={'color': "darkblue", 'family': "Arial"}
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Graphique en barres comparant les deux probabilités
-            st.markdown("### 📊 Détail des probabilités")
-            
-            fig2 = go.Figure(data=[
-                go.Bar(
-                    x=['Mauvaise qualité', 'Bonne qualité'],
-                    y=[probability_list[0] * 100, probability_list[1] * 100],
-                    text=[f"{probability_list[0]*100:.2f}%", f"{probability_list[1]*100:.2f}%"],
-                    textposition='auto',
-                    marker_color=['#ff6b6b', '#51cf66']
-                )
-            ])
-            
-            fig2.update_layout(
-                title="Probabilités pour chaque classe",
-                yaxis_title="Probabilité (%)",
-                xaxis_title="Catégorie",
-                height=400,
-                showlegend=False,
-                paper_bgcolor="white",
-                plot_bgcolor="white"
-            )
-            
-            st.plotly_chart(fig2, use_container_width=True)
-                    
-        except requests.exceptions.RequestException as e:
-            st.error(f"❌ Erreur lors de l'appel à l'API: {str(e)}")
-        except Exception as e:
-            st.error(f"❌ Erreur inattendue: {str(e)}")
+        modes_df = pd.DataFrame(['Choose', 'Input version', 'Slider version'])
+        select_mode.append(st.selectbox('', modes_df))
+    
+    if select_mode[0] == 'Input version':
+        inputversion()
+    elif select_mode[0] == 'Slider version':
+        sliderversion()
+    else:
+        st.text("")
+
+
 
 # Init code
 if __name__=='__main__': 
